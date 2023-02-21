@@ -1,0 +1,39 @@
+From 69ab3ed82602b73e0f3b5e3a8af4679f543c5b78 Mon Sep 17 00:00:00 2001
+From: ChonDoit <thphantomblog@gmail.com>
+Date: Tue, 27 Dec 2022 21:49:11 +0000
+Subject: [PATCH] Disable vendor mismatch warning
+
+---
+ .../server/wm/ActivityTaskManagerService.java    | 16 ++--------------
+ 1 file changed, 2 insertions(+), 14 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/ActivityTaskManagerService.java b/services/core/java/com/android/server/wm/ActivityTaskManagerService.java
+index f9792fcf191..b8ea76c8890 100644
+--- a/services/core/java/com/android/server/wm/ActivityTaskManagerService.java
++++ b/services/core/java/com/android/server/wm/ActivityTaskManagerService.java
+@@ -6531,20 +6531,8 @@ public class ActivityTaskManagerService extends IActivityTaskManager.Stub {
+                 }
+ 
+                 if (!Build.isBuildConsistent()) {
+-                    Slog.e(TAG, "Build fingerprint is not consistent, warning user");
+-                    mUiHandler.post(() -> {
+-                        if (mShowDialogs) {
+-                            AlertDialog d = new BaseErrorDialog(mUiContext);
+-                            d.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ERROR);
+-                            d.setCancelable(false);
+-                            d.setTitle(mUiContext.getText(R.string.android_system_label));
+-                            d.setMessage(mUiContext.getText(R.string.system_error_manufacturer));
+-                            d.setButton(DialogInterface.BUTTON_POSITIVE,
+-                                    mUiContext.getText(R.string.ok),
+-                                    mUiHandler.obtainMessage(DISMISS_DIALOG_UI_MSG, d));
+-                            d.show();
+-                        }
+-                    });
++                    Slog.e(TAG, "Build fingerprint is not consistent");
++                    // Do not emit warning about vendor mismatch
+                 }
+             }
+         }
+-- 
+2.34.1
+

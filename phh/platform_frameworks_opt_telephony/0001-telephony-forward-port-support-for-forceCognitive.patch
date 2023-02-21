@@ -1,0 +1,55 @@
+From 74794752dc8c2576fb9cf76e98ad3a74d29503ba Mon Sep 17 00:00:00 2001
+From: Pierre-Hugues Husson <phh@phh.me>
+Date: Sun, 13 Oct 2019 17:21:31 +0800
+Subject: [PATCH] telephony: forward-port support for forceCognitive
+
+* This is needed on some MTK devices. Android 10 refactored some code,
+  so now the "non-persistent/cognitive" filter is relocated to RIL and
+  also in DcTracker.setupData().
+
+Change-Id: I5e93cbef317b7973e0dc1125cfc3cc576a1cf9fa
+---
+ src/java/com/android/internal/telephony/RIL.java              | 4 +++-
+ .../android/internal/telephony/dataconnection/DcTracker.java  | 3 ++-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/RIL.java b/src/java/com/android/internal/telephony/RIL.java
+index ff7442ddb..6a36833a8 100644
+--- a/src/java/com/android/internal/telephony/RIL.java
++++ b/src/java/com/android/internal/telephony/RIL.java
+@@ -66,6 +66,7 @@ import android.os.HwBinder;
+ import android.os.Message;
+ import android.os.PowerManager;
+ import android.os.PowerManager.WakeLock;
++import android.os.SystemProperties;
+ import android.os.RemoteException;
+ import android.os.SystemClock;
+ import android.os.SystemProperties;
+@@ -4487,7 +4488,8 @@ public class RIL extends BaseCommands implements CommandsInterface {
+                     for (DataProfile dp : dps) {
+                         // For v1.0 to v1.2, we only send data profiles that has the persistent
+                         // (a.k.a modem cognitive) bit set to true.
+-                        if (dp.isPersistent()) {
++                        boolean forceCognitive = SystemProperties.getBoolean("persist.sys.phh.radio.force_cognitive", false);
++                        if (dp.isPersistent() || forceCognitive) {
+                             dpis.add(convertToHalDataProfile10(dp));
+                         }
+                     }
+diff --git a/src/java/com/android/internal/telephony/dataconnection/DcTracker.java b/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
+index 033d5867f..d05dc9457 100644
+--- a/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
++++ b/src/java/com/android/internal/telephony/dataconnection/DcTracker.java
+@@ -2036,8 +2036,9 @@ public class DcTracker extends Handler {
+         }
+ 
+         // profile id is only meaningful when the profile is persistent on the modem.
++        boolean forceCognitive = SystemProperties.getBoolean("persist.sys.phh.radio.force_cognitive", false);
+         int profileId = DATA_PROFILE_INVALID;
+-        if (apnSetting.isPersistent()) {
++        if (apnSetting.isPersistent() || forceCognitive) {
+             profileId = apnSetting.getProfileId();
+             if (profileId == DATA_PROFILE_DEFAULT) {
+                 profileId = getApnProfileID(apnContext.getApnType());
+-- 
+2.34.1
+
